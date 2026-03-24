@@ -164,7 +164,7 @@ export function OverlayApp() {
       const frustumH = vpW / 12;
       const ms = stateRef.current.modelScale;
       const ppm = frame.scale * dpi * 39.3701;
-      const autoZoom = ms > 0 ? Math.max(0.02, ppm * frustumH / (ms * vpH)) : 1;
+      const autoZoom = ms > 0 ? Math.max(0.02, ppm * frustumH / (ms * vpH) * 1.55) : 1;
       camera.zoom = autoZoom;
       camera.updateProjectionMatrix();
 
