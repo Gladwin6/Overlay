@@ -777,21 +777,9 @@ export function SetupApp() {
             <Btn primary onClick={handleBrowseNative} disabled={isLoading}>
               {isLoading ? 'Loading...' : gltfFile ? 'Load Different Model' : 'Browse...'}
             </Btn>
-            <div style={{ display: 'flex', gap: 4 }}>
-              <input
-                type="text"
-                placeholder="C:\path\to\model.glb"
-                value={pathInputValue}
-                onChange={(e) => setPathInputValue(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') loadGltfFromPath(pathInputValue); }}
-                style={{
-                  flex: 1, padding: '6px 8px', fontSize: 11, border: `1px solid ${colors.border}`,
-                  borderRadius: radii.sm, outline: 'none', fontFamily: fonts.mono,
-                }}
-              />
-              <Btn primary onClick={() => loadGltfFromPath(pathInputValue)} style={{ width: 'auto', padding: '6px 10px' }}>
-                Load
-              </Btn>
+            <div style={{ display: 'none' }}>
+              {/* Hidden path input — use Browse button or drag-drop instead */}
+              <input type="text" value={pathInputValue} onChange={(e) => setPathInputValue(e.target.value)} />
             </div>
           </div>
         </Section>
@@ -939,46 +927,7 @@ export function SetupApp() {
           </div>
         </Section>
 
-        {/* SolidWorks COM Bridge Section */}
-        <Section title="SolidWorks Bridge" icon="settings" expanded={expanded.swbridge}
-          onToggle={() => toggleSection('swbridge')}
-          badge={swBridgeStatus === 'live' ? 'LIVE' : swBridgeStatus === 'error' ? 'ERR' : null}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-            <div style={{ fontSize: 11, color: '#999' }}>
-              {swBridgeStatus === 'stopped'       && 'Reads exact camera from SolidWorks — pixel-perfect overlay.'}
-              {swBridgeStatus === 'launching'     && 'Launching SwBridge.exe...'}
-              {swBridgeStatus === 'connecting_pipe' && 'Connecting to bridge pipe...'}
-              {swBridgeStatus === 'waiting_sw'    && 'Waiting for SolidWorks to open...'}
-              {swBridgeStatus === 'live'          && 'Live — reading SolidWorks camera at 60 fps.'}
-              {swBridgeStatus === 'error'         && (swBridgeDetail || 'Bridge error. See console.')}
-            </div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <div style={{
-                width: 8, height: 8, borderRadius: 4, flexShrink: 0,
-                background: swBridgeStatus === 'live'  ? colors.statusGreen
-                          : swBridgeStatus === 'error' ? colors.statusRed
-                          : swBridgeStatus === 'stopped' ? '#ccc'
-                          : colors.brandOrange,
-              }} />
-              <span style={{ fontSize: 11, color: '#666', flex: 1 }}>{swBridgeStatus}</span>
-            </div>
-            <Btn
-              primary={swBridgeStatus === 'stopped' || swBridgeStatus === 'error'}
-              danger={swBridgeStatus === 'live' || swBridgeStatus === 'waiting_sw' || swBridgeStatus === 'launching' || swBridgeStatus === 'connecting_pipe'}
-              onClick={handleSwBridgeToggle}
-              disabled={!gltfFile}
-            >
-              {swBridgeStatus === 'stopped' || swBridgeStatus === 'error'
-                ? 'Connect SolidWorks'
-                : 'Disconnect'}
-            </Btn>
-            {swBridgeStatus === 'error' && swBridgeDetail.includes('not found') && (
-              <div style={{ fontSize: 10, color: colors.statusRed, lineHeight: 1.4 }}>
-                Build the bridge first: open PowerShell in sw-bridge/ and run <code>.\build.ps1</code>
-              </div>
-            )}
-          </div>
-        </Section>
+        {/* SolidWorks Bridge — hidden from UI, auto-connects in background */}
 
         {/* Debug Section — live crop previews + axis detection */}
         {hasROI && (
@@ -1301,14 +1250,14 @@ export function SetupApp() {
               <>
                 {/* Room Code */}
                 <div style={{
-                  background: '#1a1a2e', borderRadius: radii.md, padding: '10px 14px',
+                  background: '#1a1a1a', borderRadius: radii.md, padding: '10px 14px',
                   textAlign: 'center',
                 }}>
-                  <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>Share this code with vendor</div>
+                  <div style={{ fontSize: 10, color: '#888', marginBottom: 4 }}>Share this code with vendor</div>
                   <div style={{
                     fontSize: 22, fontWeight: 800, fontFamily: fonts.mono,
-                    color: '#fff', letterSpacing: 2,
-                  }}>{roomCode}</div>
+                    color: '#fff', letterSpacing: 3,
+                  }}>{roomCode?.replace('HNM-', '')}</div>
                 </div>
 
                 {/* Mic Mute Toggle */}
@@ -1324,14 +1273,15 @@ export function SetupApp() {
                     }
                   }}
                   style={{
-                    width: '100%', padding: '6px 0', borderRadius: 6,
-                    border: `1px solid ${micMuted ? colors.statusRed : colors.statusGreen}`,
-                    background: micMuted ? '#fde8e8' : '#e8fde8',
-                    cursor: 'pointer', fontSize: 12, fontWeight: 600,
-                    color: micMuted ? colors.statusRed : colors.statusGreen,
+                    width: '100%', padding: '7px 0', borderRadius: 6,
+                    border: `1px solid ${micMuted ? '#e0e0e0' : '#1a1a1a'}`,
+                    background: micMuted ? '#fff' : '#1a1a1a',
+                    cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                    color: micMuted ? '#999' : '#fff',
+                    fontFamily: 'inherit',
                   }}
                 >
-                  {micMuted ? '🔇 Mic Muted' : '🎤 Mic On'}
+                  {micMuted ? 'Mic Off' : 'Mic On'}
                 </button>
 
                 {/* Control Request banner */}

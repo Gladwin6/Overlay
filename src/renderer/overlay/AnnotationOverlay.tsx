@@ -58,19 +58,19 @@ export function AnnotationOverlay({
   const worldToScreen = useCallback((worldPoint: { x: number; y: number; z: number }): { x: number; y: number } | null => {
     if (!camera || !modelGroup) return null;
 
-    // The annotation worldPoint is in the original model coordinate space.
-    // The model child inside modelGroup has position offset (-center) and
-    // modelGroup has quaternion (from bridge) + scale.
-    // Use the model child's matrixWorld to transform correctly.
-    const modelChild = modelGroup.children[0];
-    const matrix = modelChild ? modelChild.matrixWorld : modelGroup.matrixWorld;
+    // Ensure matrices are up to date
+    modelGroup.updateMatrixWorld(true);
+    camera.updateMatrixWorld(true);
 
+    // Use group matrix ONLY (rotation + scale), not child matrix (which adds centering offset).
+    // The platform's worldPoint is already in centered+scaled space.
     const vec = new THREE.Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
-    vec.applyMatrix4(matrix);
+    vec.applyQuaternion(modelGroup.quaternion);
     vec.project(camera);
 
     return {
-      x: (vec.x * 0.5 + 0.5) * width,
+      // Mirror X because canvas has CSS scaleX(-1) but this SVG doesn't
+      x: (-vec.x * 0.5 + 0.5) * width,
       y: (-vec.y * 0.5 + 0.5) * height,
     };
   }, [camera, modelGroup, width, height]);
@@ -211,7 +211,7 @@ export function AnnotationOverlay({
         </g>
       );
     });
-  }, [annotations, alignment.rotationX, alignment.rotationY, worldToScreen, isBackFacing]);
+  }); // No deps — recompute every render so annotations track bridge rotation
 
   return (
     <svg

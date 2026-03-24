@@ -1345,10 +1345,13 @@ const annotationServer = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const annotation = JSON.parse(body);
-        console.log('[AnnotationServer] Received:', annotation.text || annotation.id);
+        console.log('[AnnotationServer] Received:', annotation.text || annotation.id, '| overlayWindow:', !!overlayWindow?.win);
         // Forward to overlay renderer
         if (overlayWindow?.win && !overlayWindow.win.isDestroyed()) {
           overlayWindow.win.webContents.send('platform:annotation', annotation);
+          console.log('[AnnotationServer] Forwarded to overlay renderer');
+        } else {
+          console.log('[AnnotationServer] No overlay window — annotation dropped!');
         }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
