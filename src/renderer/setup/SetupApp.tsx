@@ -376,6 +376,8 @@ export function SetupApp() {
   const [controlRequested, setControlRequested] = useState(false);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const reviewStreamRef = useRef<MediaStream | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const [micMuted, setMicMuted] = useState(false);
 
   // Alignment score
   const [alignScore, setAlignScore] = useState<{ grade: string; overlapPercent: number; meanDistance: number; offsetX: number; offsetY: number } | null>(null);
@@ -426,17 +428,31 @@ export function SetupApp() {
       if (!stream) {
         console.log('[Review] No capture — starting screen capture now');
         try {
-          const { desktopCapturer } = (window as any).require('electron');
-          const sources = await desktopCapturer.getSources({ types: ['screen'] });
-          if (sources.length === 0) { console.error('[Review] No screen sources'); return; }
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: sources[0].id, maxWidth: 1920, maxHeight: 1080 } } as any,
+          // Use getDisplayMedia (auto-approved by main process handler)
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: { width: { max: 1920 }, height: { max: 1080 }, frameRate: { max: 15 } },
             audio: false,
           });
           reviewStreamRef.current = stream;
+          console.log('[Review] Screen capture started via getDisplayMedia');
         } catch (err) {
           console.error('[Review] Screen capture failed:', err);
-          return;
+          // Fallback to desktopCapturer
+          try {
+            const { desktopCapturer } = (window as any).require('electron');
+            const sources = await desktopCapturer.getSources({ types: ['screen'] });
+            if (sources.length > 0) {
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: { mandatory: { chromeMediaSource: 'desktop', chromeMediaSourceId: sources[0].id, maxWidth: 1920, maxHeight: 1080 } } as any,
+                audio: false,
+              });
+              reviewStreamRef.current = stream;
+              console.log('[Review] Screen capture started via desktopCapturer fallback');
+            }
+          } catch (err2) {
+            console.error('[Review] Both capture methods failed:', err2);
+            return;
+          }
         }
       }
 
@@ -451,12 +467,14 @@ export function SetupApp() {
       peerConnectionRef.current = pc;
 
       // Add screen capture tracks to the connection
-      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      if (!stream) { console.error('[Review] No stream available for WebRTC'); return; }
+      stream.getTracks().forEach(track => pc.addTrack(track, stream!));
 
       // Also add microphone audio if available
       try {
         const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStream.getAudioTracks().forEach(track => pc.addTrack(track, micStream));
+        micStreamRef.current = micStream;
       } catch (e) {
         console.warn('[Review] Mic not available:', e);
       }
@@ -493,7 +511,35 @@ export function SetupApp() {
       }
     };
 
+    // Receive screen sourceId from main process — capture and create WebRTC offer
+    const onScreenSource = async (_e: any, data: { sourceId: string }) => {
+      console.log('[Review] Received screen sourceId:', data.sourceId);
+      if (!reviewStreamRef.current) {
+        try {
+          // Use Electron's chromeMediaSource with the sourceId from main process
+          reviewStreamRef.current = await navigator.mediaDevices.getUserMedia({
+            video: {
+              mandatory: {
+                chromeMediaSource: 'desktop',
+                chromeMediaSourceId: data.sourceId,
+                maxWidth: 1920,
+                maxHeight: 1080,
+              },
+            } as any,
+            audio: false,
+          });
+          console.log('[Review] Screen capture OK, triggering WebRTC offer');
+        } catch (err) {
+          console.error('[Review] Screen capture FAILED:', err);
+          return;
+        }
+      }
+      // Now create the WebRTC offer with the stream
+      onPeerJoined();
+    };
+
     ipcRenderer.on('room:peer-joined', onPeerJoined);
+    ipcRenderer.on('review:screen-source', onScreenSource);
     ipcRenderer.on('signal:answer', onSignalAnswer);
     ipcRenderer.on('signal:ice', onSignalIce);
 
@@ -503,6 +549,7 @@ export function SetupApp() {
       ipcRenderer.removeListener('review:control-request', onControlRequest);
       ipcRenderer.removeListener('review:chat-message', onChatMessage);
       ipcRenderer.removeListener('room:peer-joined', onPeerJoined);
+      ipcRenderer.removeListener('review:screen-source', onScreenSource);
       ipcRenderer.removeListener('signal:answer', onSignalAnswer);
       ipcRenderer.removeListener('signal:ice', onSignalIce);
       if (peerConnectionRef.current) {
@@ -1263,6 +1310,29 @@ export function SetupApp() {
                     color: '#fff', letterSpacing: 2,
                   }}>{roomCode}</div>
                 </div>
+
+                {/* Mic Mute Toggle */}
+                <button
+                  onClick={() => {
+                    const ms = micStreamRef.current;
+                    if (ms) {
+                      const track = ms.getAudioTracks()[0];
+                      if (track) {
+                        track.enabled = !track.enabled;
+                        setMicMuted(!track.enabled);
+                      }
+                    }
+                  }}
+                  style={{
+                    width: '100%', padding: '6px 0', borderRadius: 6,
+                    border: `1px solid ${micMuted ? colors.statusRed : colors.statusGreen}`,
+                    background: micMuted ? '#fde8e8' : '#e8fde8',
+                    cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                    color: micMuted ? colors.statusRed : colors.statusGreen,
+                  }}
+                >
+                  {micMuted ? '🔇 Mic Muted' : '🎤 Mic On'}
+                </button>
 
                 {/* Control Request banner */}
                 {controlRequested && (

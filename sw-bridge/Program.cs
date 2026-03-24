@@ -244,7 +244,7 @@ class Program
                         var xtd = Com.Get(xform, "ArrayData") as double[];
                         if (xtd != null && xtd.Length >= 9)
                         {
-                            // Transform rotation may include scale — normalize each row
+                            // Normalize rotation rows for the overlay (rotation only, no scale)
                             for (int row = 0; row < 3; row++)
                             {
                                 double a = xtd[row*3], b = xtd[row*3+1], c = xtd[row*3+2];
@@ -273,13 +273,30 @@ class Program
                 }
                 catch { }
 
-                // Translation from Orientation3
+                // Translation from Orientation3 (for payload)
                 double tx = td.Length > 9  ? td[9]  : 0.0;
                 double ty = td.Length > 10 ? td[10] : 0.0;
                 double tz = td.Length > 11 ? td[11] : 0.0;
 
-                // Position: zero for now (pan tracking needs different approach)
+                // ── Pan tracking via Translation3 (live pan offset in metres) ──
                 double scx = 0, scy = 0;
+                try
+                {
+                    var trans3 = Com.Get(view, "Translation3");
+                    if (trans3 != null)
+                    {
+                        var t3d = Com.Get(trans3, "ArrayData") as double[];
+                        if (t3d != null && t3d.Length >= 2)
+                        {
+                            // Translation3 gives pan offset in metres
+                            // Convert to logical pixels: metres × Scale2 × DPI × 39.3701
+                            double ppmVal = scale * dpi * 39.3701;
+                            scx =  t3d[0] * ppmVal;
+                            scy = -t3d[1] * ppmVal;
+                        }
+                    }
+                }
+                catch { }
 
                 // ── Full 4×4 view matrix (row-major) ─────────────────────────────────
                 var mv = new[]

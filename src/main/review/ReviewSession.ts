@@ -31,10 +31,12 @@ export class ReviewSession {
     });
 
     this.socket.on('room:peer-joined', () => {
-      console.log('[Review] Vendor joined');
+      console.log('[Review] Vendor joined — sending peer-joined to setup renderer');
       this.sendToSetup('review:status', { status: 'connected', code: this.roomCode });
       // Notify renderer to initiate WebRTC offer
       this.sendToSetup('room:peer-joined', {});
+      // Also try signaling directly — trigger screen capture from main process
+      this.startScreenShare();
     });
 
     this.socket.on('room:peer-left', () => {
@@ -146,6 +148,22 @@ export class ReviewSession {
 
   getRoomCode(): string | null {
     return this.roomCode;
+  }
+
+  private async startScreenShare(): Promise<void> {
+    try {
+      const { desktopCapturer } = require('electron');
+      const sources = await desktopCapturer.getSources({ types: ['screen'] });
+      if (sources.length > 0) {
+        const sourceId = sources[0].id;
+        console.log(`[Review] Got screen source: ${sourceId} — sending to setup renderer`);
+        this.sendToSetup('review:screen-source', { sourceId });
+      } else {
+        console.error('[Review] No screen sources available');
+      }
+    } catch (err: any) {
+      console.error('[Review] Failed to get screen sources:', err.message);
+    }
   }
 
   private sendToSetup(channel: string, data: any): void {

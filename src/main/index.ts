@@ -130,6 +130,17 @@ function rotateAxes(axes: ViewCubeAxes, offsetX: number, offsetY: number): ViewC
 // ── App Lifecycle ────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  // Auto-approve screen sharing requests (Electron 33+ requirement)
+  const { session, desktopCapturer: dc } = require('electron');
+  session.defaultSession.setDisplayMediaRequestHandler(async (_request: any, callback: any) => {
+    const sources = await dc.getSources({ types: ['screen'] });
+    if (sources.length > 0) {
+      callback({ video: sources[0] });
+    } else {
+      callback({});
+    }
+  });
+
   // Register custom protocol for loading local GLTF files
   try {
     protocol.handle('local-file', (request) => {
@@ -1262,9 +1273,11 @@ function setupIPC() {
 
   // Relay WebRTC signaling from renderer to server
   ipcMain.on('signal:offer', (_event, data: any) => {
+    console.log('[Main] Relaying signal:offer to server');
     reviewSession?.relaySignal('signal:offer', data);
   });
   ipcMain.on('signal:answer', (_event, data: any) => {
+    console.log('[Main] Relaying signal:answer to server');
     reviewSession?.relaySignal('signal:answer', data);
   });
   ipcMain.on('signal:ice', (_event, data: any) => {

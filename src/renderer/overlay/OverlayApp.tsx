@@ -200,14 +200,18 @@ export function OverlayApp() {
       camera.updateProjectionMatrix();
 
       // ── Position: offset model to match SW viewport pan ──
-      // panX/panY = model center offset from SW viewport center in logical px
-      // Convert to Three.js world units
+      // panX/panY from bridge = model offset from SW viewport center in logical px
+      // The SW viewport center is offset from the overlay window center
+      // because the feature tree panel shifts the viewport right
       const panX = frame.panX ?? 0;
       const panY = frame.panY ?? 0;
+      const swVpW = frame.viewportWidth || vpW;
+      const vpOffsetX = (vpW - swVpW) / 2;
+
       const pxPerWorld = vpH / frustumH;
       const worldPerPx = 1.0 / (autoZoom * pxPerWorld);
       mg.position.set(
-        -panX * worldPerPx,  // negated: CSS scaleX(-1) flips horizontal
+        -(panX + vpOffsetX) * worldPerPx,  // negated: CSS scaleX(-1)
         -panY * worldPerPx,
         0
       );
