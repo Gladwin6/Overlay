@@ -62,8 +62,7 @@ export function AnnotationOverlay({
     modelGroup.updateMatrixWorld(true);
     camera.updateMatrixWorld(true);
 
-    // Use group matrix ONLY (rotation + scale), not child matrix (which adds centering offset).
-    // The platform's worldPoint is already in centered+scaled space.
+    // Platform worldPoint is in centered+scaled space. Apply only bridge rotation.
     const vec = new THREE.Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
     vec.applyQuaternion(modelGroup.quaternion);
     vec.project(camera);
