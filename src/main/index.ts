@@ -1,6 +1,7 @@
 import { app, ipcMain, dialog, protocol, desktopCapturer, BrowserWindow, globalShortcut } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as http from 'http';
 
 // Prevent EPIPE crashes when a child process pipe breaks (e.g. SwBridge.exe dies).
 // Without this, any console.log in the main process throws an uncaught exception.
@@ -1308,3 +1309,67 @@ export function setAlignment(a: AlignmentState) {
   alignment = a;
   broadcastAlignment();
 }
+
+// ── HTTP Annotation Server (receives annotations from platform) ──────
+
+const ANNOTATION_PORT = 3456;
+
+const annotationServer = http.createServer((req, res) => {
+  // CORS headers for platform
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/annotations') {
+    let body = '';
+    req.on('data', (chunk: string) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const annotation = JSON.parse(body);
+        console.log('[AnnotationServer] Received:', annotation.text || annotation.id);
+        // Forward to overlay renderer
+        if (overlayWindow?.win && !overlayWindow.win.isDestroyed()) {
+          overlayWindow.win.webContents.send('platform:annotation', annotation);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/annotations/delete') {
+    let body = '';
+    req.on('data', (chunk: string) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { id } = JSON.parse(body);
+        if (overlayWindow?.win && !overlayWindow.win.isDestroyed()) {
+          overlayWindow.win.webContents.send('platform:annotation-delete', id);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (err) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  res.writeHead(404);
+  res.end('Not found');
+});
+
+annotationServer.listen(ANNOTATION_PORT, '127.0.0.1', () => {
+  console.log(`[AnnotationServer] Listening on http://127.0.0.1:${ANNOTATION_PORT}`);
+});

@@ -80,6 +80,38 @@ export function OverlayApp() {
     };
   }, []);
 
+  // ── Platform Annotations (3D world points from hanomi-platform) ──
+
+  useEffect(() => {
+    const onPlatformAnnotation = (_e: any, ann: any) => {
+      // Convert platform annotation to overlay Annotation format
+      if (ann.worldPoint) {
+        const newAnn: Annotation = {
+          id: ann.id || `plat_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          worldPoint: ann.worldPoint,
+          worldNormal: ann.worldNormal || { x: 0, y: 1, z: 0 },
+          text: ann.text || '',
+          createdAt: ann.timestamp || Date.now(),
+        };
+        setAnnotations(prev => {
+          // Avoid duplicates
+          if (prev.find(a => a.id === newAnn.id)) return prev;
+          return [...prev, newAnn];
+        });
+        console.log('[Overlay] Platform annotation received:', newAnn.text);
+      }
+    };
+    const onPlatformAnnotationDelete = (_e: any, id: string) => {
+      setAnnotations(prev => prev.filter(a => a.id !== id));
+    };
+    ipcRenderer.on('platform:annotation', onPlatformAnnotation);
+    ipcRenderer.on('platform:annotation-delete', onPlatformAnnotationDelete);
+    return () => {
+      ipcRenderer.removeListener('platform:annotation', onPlatformAnnotation);
+      ipcRenderer.removeListener('platform:annotation-delete', onPlatformAnnotationDelete);
+    };
+  }, []);
+
   // ── CAD Bridge Camera (pixel-perfect, auto-detected) ────────────
   // When a bridge is live (e.g., SolidWorks COM), it sends exact camera data.
   // This takes priority over view cube tracking.
@@ -148,7 +180,6 @@ export function OverlayApp() {
 
       _q.setFromRotationMatrix(m4);
       mg.quaternion.copy(_q);
-      mg.position.set(0, 0, 0);
       mg.scale.setScalar(stateRef.current.modelScale);
 
       // Fixed camera
@@ -168,8 +199,21 @@ export function OverlayApp() {
       camera.zoom = autoZoom;
       camera.updateProjectionMatrix();
 
-      // ── RENDER NOW — don't rely on animate loop ──
-      rend.render(scene, camera);
+      // ── Position: offset model to match SW viewport pan ──
+      // panX/panY = model center offset from SW viewport center in logical px
+      // Convert to Three.js world units
+      const panX = frame.panX ?? 0;
+      const panY = frame.panY ?? 0;
+      const pxPerWorld = vpH / frustumH;
+      const worldPerPx = 1.0 / (autoZoom * pxPerWorld);
+      mg.position.set(
+        -panX * worldPerPx,  // negated: CSS scaleX(-1) flips horizontal
+        -panY * worldPerPx,
+        0
+      );
+
+      // Let animate loop render (synced with display)
+      stateRef.current.needsRender = true;
 
       // Debug
       if (bridgeFrameCount <= 5 || bridgeFrameCount % 10 === 0) {
@@ -386,52 +430,6 @@ export function OverlayApp() {
             modelGroup.scale.setScalar(curS + (targetS - curS) * SLERP_FACTOR);
           }
 
-          stateRef.current.needsRender = true;
-        }
-      }
-
-      // Bridge rendering is now handled directly in the IPC handler — skip here
-      if (false && bridgeLiveRef.current && bridgeCamRef.current) {
-        const bc = bridgeCamRef.current as any;
-        const { modelGroup: mg } = stateRef.current;
-        if (mg && bc.rotMatrix) {
-          const s = stateRef.current.modelScale;
-          const rm = bc.rotMatrix;
-
-          // GLB model offset vs SolidWorks — apply -90° Z correction
-          const fixedCorrection = new THREE.Matrix4().makeRotationZ(-Math.PI / 2);
-          // Also apply user-adjustable correction (Ctrl+Shift+X/Y/Z)
-          const userCorrection = new THREE.Matrix4().makeRotationFromEuler(correctionRef.current);
-          const correction = new THREE.Matrix4().multiplyMatrices(fixedCorrection, userCorrection);
-          const finalRot = new THREE.Matrix4().multiplyMatrices(rm, correction);
-
-          // Set model rotation via quaternion
-          mg.matrixAutoUpdate = true;
-          const q = new THREE.Quaternion();
-          q.setFromRotationMatrix(finalRot);
-          mg.quaternion.copy(q);
-          mg.scale.setScalar(s);
-
-          // Position: convert bridge pan (logical px) to Three.js world units
-          const vpH = window.innerHeight;
-          const frustumH = window.innerWidth / 12;
-          const pxPerWorld = vpH / frustumH;
-          const worldPerPx = 1.0 / ((bc.zoom || 1) * pxPerWorld);
-          mg.position.set(
-            (bc.panX || 0) * worldPerPx,
-            -(bc.panY || 0) * worldPerPx,  // screen Y is inverted
-            0
-          );
-
-          // Fixed camera — SW Front view: look from +Z, Y-up on screen
-          camera.position.set(0, 0, 200);
-          camera.up.set(0, 1, 0);
-          camera.lookAt(0, 0, 0);
-          if (bc.zoom) {
-            camera.zoom = bc.zoom;
-          }
-          camera.updateProjectionMatrix();
-          camera.updateMatrixWorld(true);
           stateRef.current.needsRender = true;
         }
       }

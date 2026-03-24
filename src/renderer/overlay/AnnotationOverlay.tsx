@@ -54,44 +54,36 @@ export function AnnotationOverlay({
   const labelOffsetsRef = useRef<Map<string, LabelOffset>>(new Map());
   const [, forceRender] = useState(0);
 
-  // ── World-to-screen projection (eager camera sync) ───────────────
+  // ── World-to-screen projection (uses current camera + model state) ──
   const worldToScreen = useCallback((worldPoint: { x: number; y: number; z: number }): { x: number; y: number } | null => {
-    if (!camera) return null;
+    if (!camera || !modelGroup) return null;
 
-    // Eager camera sync — match alignment rotation before projecting
-    const dist = 200;
-    const radX = THREE.MathUtils.degToRad(alignment.rotationX);
-    const radY = THREE.MathUtils.degToRad(alignment.rotationY);
-    camera.position.set(
-      dist * Math.sin(radY) * Math.cos(radX),
-      dist * Math.sin(radX),
-      dist * Math.cos(radY) * Math.cos(radX)
-    );
-    camera.lookAt(0, 0, 0);
-    camera.updateProjectionMatrix();
+    // The annotation worldPoint is in the original model coordinate space.
+    // The model child inside modelGroup has position offset (-center) and
+    // modelGroup has quaternion (from bridge) + scale.
+    // Use the model child's matrixWorld to transform correctly.
+    const modelChild = modelGroup.children[0];
+    const matrix = modelChild ? modelChild.matrixWorld : modelGroup.matrixWorld;
 
     const vec = new THREE.Vector3(worldPoint.x, worldPoint.y, worldPoint.z);
+    vec.applyMatrix4(matrix);
     vec.project(camera);
 
     return {
       x: (vec.x * 0.5 + 0.5) * width,
       y: (-vec.y * 0.5 + 0.5) * height,
     };
-  }, [camera, alignment.rotationX, alignment.rotationY, width, height]);
+  }, [camera, modelGroup, width, height]);
 
   // ── Back-face detection ──────────────────────────────────────────
   const isBackFacing = useCallback((worldNormal: { x: number; y: number; z: number }): boolean => {
-    // Camera view direction based on alignment
-    const radX = THREE.MathUtils.degToRad(alignment.rotationX);
-    const radY = THREE.MathUtils.degToRad(alignment.rotationY);
-    const viewDir = new THREE.Vector3(
-      -Math.sin(radY) * Math.cos(radX),
-      -Math.sin(radX),
-      -Math.cos(radY) * Math.cos(radX)
-    );
+    if (!camera) return false;
+    // Use actual camera direction
+    const viewDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     const normal = new THREE.Vector3(worldNormal.x, worldNormal.y, worldNormal.z);
+    if (modelGroup) normal.applyQuaternion(modelGroup.quaternion);
     return normal.dot(viewDir) < 0;
-  }, [alignment.rotationX, alignment.rotationY]);
+  }, [camera, modelGroup]);
 
   // ── Force-directed label layout (computed once when items change) ──
   useEffect(() => {

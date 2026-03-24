@@ -273,12 +273,12 @@ class Program
                 }
                 catch { }
 
-                // Translation from Orientation3 (stable values)
+                // Translation from Orientation3
                 double tx = td.Length > 9  ? td[9]  : 0.0;
                 double ty = td.Length > 10 ? td[10] : 0.0;
                 double tz = td.Length > 11 ? td[11] : 0.0;
 
-                // ── Position: zero for now (Transform translation has different scale) ──
+                // Position: zero for now (pan tracking needs different approach)
                 double scx = 0, scy = 0;
 
                 // ── Full 4×4 view matrix (row-major) ─────────────────────────────────
