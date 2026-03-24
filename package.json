@@ -1,0 +1,61 @@
+{
+  "name": "hanomi-overlay",
+  "version": "1.0.0",
+  "description": "Transparent GLTF wireframe overlay for CAD software with optical flow tracking",
+  "main": "dist/main/main/index.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"webpack --config webpack.renderer.config.js --watch\" \"tsc -p tsconfig.main.json --watch\"",
+    "build": "webpack --config webpack.renderer.config.js && tsc -p tsconfig.main.json",
+    "build:native": "cd src/native && node-gyp rebuild",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.hanomi.overlay",
+    "productName": "Hanomi Overlay",
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0",
+    "jsfeat": "^0.0.8",
+    "robotjs": "^0.7.0",
+    "socket.io-client": "^4.8.3",
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/three": "^0.160.0",
+    "concurrently": "^8.2.0",
+    "css-loader": "^6.8.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^24.9.1",
+    "html-webpack-plugin": "^5.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "style-loader": "^3.3.0",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.3.0",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.0"
+  }
+}

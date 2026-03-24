@@ -1,0 +1,8 @@
+{
+  "name": "hanomi-native",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  }
+}

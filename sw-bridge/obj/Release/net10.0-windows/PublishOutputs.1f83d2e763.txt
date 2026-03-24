@@ -1,0 +1,5 @@
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\sw-bridge\bin\SwBridge.exe
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\sw-bridge\bin\SwBridge.dll
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\sw-bridge\bin\SwBridge.deps.json
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\sw-bridge\bin\SwBridge.runtimeconfig.json
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\sw-bridge\bin\SwBridge.pdb
