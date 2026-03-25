@@ -93,14 +93,14 @@ export class BridgeManager {
         const { SolidWorksBridge } = await import('./SolidWorksBridge');
         return new SolidWorksBridge();
 
+      case 'inventor':
+        const { InventorBridge } = await import('./InventorBridge');
+        return new InventorBridge();
+
       // Future bridges:
       // case 'fusion360':
       //   const { Fusion360Bridge } = await import('./Fusion360Bridge');
       //   return new Fusion360Bridge();
-      //
-      // case 'inventor':
-      //   const { InventorBridge } = await import('./InventorBridge');
-      //   return new InventorBridge();
       //
       // case 'freecad':
       //   const { FreeCADBridge } = await import('./FreeCADBridge');

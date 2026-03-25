@@ -1,0 +1,15 @@
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\bin\InventorBridge.exe
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\bin\InventorBridge.deps.json
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\bin\InventorBridge.runtimeconfig.json
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\bin\InventorBridge.dll
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\bin\InventorBridge.pdb
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.AssemblyInfoInputs.cache
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.AssemblyInfo.cs
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.csproj.CoreCompileInputs.cache
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.sourcelink.json
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.dll
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\refint\InventorBridge.dll
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.pdb
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\InventorBridge.genruntimeconfig.cache
+C:\Users\team\overlay\app Overlay APP\app Overlay APP\hanomi-overlay\inventor-bridge\obj\Release\net10.0-windows\ref\InventorBridge.dll

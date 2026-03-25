@@ -210,7 +210,7 @@ export function AnnotationOverlay({
         </g>
       );
     });
-  }); // No deps — recompute every render so annotations track bridge rotation
+  }, [annotations, worldToScreen, isBackFacing]);
 
   return (
     <svg
