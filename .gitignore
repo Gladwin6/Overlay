@@ -10,3 +10,11 @@ inventor-bridge/bin/Release/
 inventor-bridge/obj/
 nx-bridge/bin/Release/
 nx-bridge/obj/
+fusion360-bridge/__pycache__/
+catia-bridge/bin/Release/
+catia-bridge/obj/
+creo-bridge/bin/Release/
+creo-bridge/obj/
+solidedge-bridge/bin/Release/
+solidedge-bridge/obj/
+freecad-bridge/__pycache__/

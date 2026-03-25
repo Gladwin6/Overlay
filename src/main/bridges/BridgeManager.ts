@@ -101,14 +101,29 @@ export class BridgeManager {
         const { NxBridge } = await import('./NxBridge');
         return new NxBridge();
 
-      // Future bridges:
-      // case 'fusion360':
-      //   const { Fusion360Bridge } = await import('./Fusion360Bridge');
-      //   return new Fusion360Bridge();
-      //
-      // case 'freecad':
-      //   const { FreeCADBridge } = await import('./FreeCADBridge');
-      //   return new FreeCADBridge();
+      case 'fusion360':
+        const { Fusion360Bridge } = await import('./Fusion360Bridge');
+        return new Fusion360Bridge();
+
+      case 'catia':
+        const { CatiaBridge } = await import('./CatiaBridge');
+        return new CatiaBridge();
+
+      case 'creo':
+        const { CreoBridge } = await import('./CreoBridge');
+        return new CreoBridge();
+
+      case 'freecad':
+        const { FreeCADBridge } = await import('./FreeCADBridge');
+        return new FreeCADBridge();
+
+      case 'solidedge':
+        const { SolidEdgeBridge } = await import('./SolidEdgeBridge');
+        return new SolidEdgeBridge();
+
+      case 'onshape':
+        const { OnshapeBridge } = await import('./OnshapeBridge');
+        return new OnshapeBridge();
 
       default:
         console.log(`[BridgeManager] No bridge available for ${type} — falling back to screen tracking`);
