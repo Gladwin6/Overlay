@@ -252,6 +252,48 @@ function launchMainApp() {
     }
   }, 2000);
 
+  // ── Monitor tracking: follow CAD window across displays ──────────────
+  const { screen: electronScreen } = require('electron');
+  let currentDisplayId = electronScreen.getPrimaryDisplay().id;
+
+  // Use cursor position as proxy for which display the user is working on.
+  // When cursor moves to a different display, move the overlay there.
+  const monitorTracker = setInterval(() => {
+    if (!overlayWindow || overlayWindow.win.isDestroyed()) return;
+    try {
+      const cursor = electronScreen.getCursorScreenPoint();
+      const display = electronScreen.getDisplayNearestPoint(cursor);
+      if (display.id !== currentDisplayId) {
+        currentDisplayId = display.id;
+        overlayWindow.moveToDisplay(display);
+        overlayWindow.win.webContents.send('display-changed', {
+          width: display.bounds.width,
+          height: display.bounds.height,
+        });
+        console.log(`[Main] Overlay moved to display ${display.id} (${display.bounds.width}x${display.bounds.height})`);
+      }
+    } catch {}
+  }, 1000);
+
+  // Handle display changes (resolution, added/removed monitors)
+  electronScreen.on('display-metrics-changed', (_event: any, display: any, changedMetrics: string[]) => {
+    if (display.id === currentDisplayId && overlayWindow && !overlayWindow.win.isDestroyed()) {
+      console.log(`[Main] Display metrics changed: ${changedMetrics.join(', ')}`);
+      overlayWindow.moveToDisplay(display);
+      overlayWindow.win.webContents.send('display-changed', {
+        width: display.bounds.width,
+        height: display.bounds.height,
+      });
+    }
+  });
+
+  electronScreen.on('display-removed', () => {
+    console.log('[Main] Display removed — moving overlay to primary');
+    const primary = electronScreen.getPrimaryDisplay();
+    currentDisplayId = primary.id;
+    overlayWindow?.moveToDisplay(primary);
+  });
+
   // ── Global shortcuts: rotate overlay correction (Ctrl+Shift+X/Y/Z/R) ──
   const axes = ['x', 'y', 'z'] as const;
   for (const axis of axes) {

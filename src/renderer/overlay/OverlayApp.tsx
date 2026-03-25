@@ -462,8 +462,15 @@ export function OverlayApp() {
     };
     window.addEventListener('resize', onResize);
 
+    // Handle display changes (moved to different monitor, resolution changed)
+    const onDisplayChanged = () => {
+      setTimeout(onResize, 100); // slight delay for window bounds to settle
+    };
+    ipcRenderer.on('display-changed', onDisplayChanged);
+
     return () => {
       window.removeEventListener('resize', onResize);
+      ipcRenderer.removeListener('display-changed', onDisplayChanged);
       if (stateRef.current.frameId) cancelAnimationFrame(stateRef.current.frameId);
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
