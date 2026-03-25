@@ -6,3 +6,5 @@ src/native/node_modules/
 .DS_Store
 sw-bridge/bin/Release/
 sw-bridge/obj/
+inventor-bridge/bin/Release/
+inventor-bridge/obj/
