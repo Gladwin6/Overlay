@@ -97,6 +97,10 @@ export class BridgeManager {
         const { InventorBridge } = await import('./InventorBridge');
         return new InventorBridge();
 
+      case 'nx':
+        const { NxBridge } = await import('./NxBridge');
+        return new NxBridge();
+
       // Future bridges:
       // case 'fusion360':
       //   const { Fusion360Bridge } = await import('./Fusion360Bridge');

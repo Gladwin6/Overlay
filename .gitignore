@@ -8,3 +8,5 @@ sw-bridge/bin/Release/
 sw-bridge/obj/
 inventor-bridge/bin/Release/
 inventor-bridge/obj/
+nx-bridge/bin/Release/
+nx-bridge/obj/
